@@ -1,5 +1,6 @@
 const tabLinks = Array.from(document.querySelectorAll('.tab-link'));
 const years = Array.from(document.querySelectorAll('.current-year'));
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const now = new Date().getFullYear();
 years.forEach((yearNode) => {
@@ -7,7 +8,7 @@ years.forEach((yearNode) => {
 });
 
 // Enable smooth scroll behavior
-document.documentElement.style.scrollBehavior = 'smooth';
+document.documentElement.style.scrollBehavior = prefersReducedMotion ? 'auto' : 'smooth';
 
 // Menu Toggle
 const menuToggle = document.querySelector('.menu-toggle');
@@ -82,50 +83,57 @@ updateProgress();
 
 const revealItems = Array.from(document.querySelectorAll('.reveal'));
 
-const revealObserver = new IntersectionObserver(
-  (entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('in-view');
-      }
-    });
-  },
-  { threshold: 0.15 }\n);
-);
+if ('IntersectionObserver' in window) {
+  const revealObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+        }
+      });
+    },
+    { threshold: 0.15 }
+  );
 
-revealItems.forEach((item) => revealObserver.observe(item));
+  revealItems.forEach((item) => revealObserver.observe(item));
+} else {
+  revealItems.forEach((item) => item.classList.add('in-view'));
+}
 
 const tiltCards = Array.from(document.querySelectorAll('.tilt-card'));
 
-tiltCards.forEach((card) => {
-  card.addEventListener('mousemove', (event) => {
-    const rect = card.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    const rx = ((y / rect.height) - 0.5) * -3;
-    const ry = ((x / rect.width) - 0.5) * 3;
+if (!prefersReducedMotion) {
+  tiltCards.forEach((card) => {
+    card.addEventListener('mousemove', (event) => {
+      const rect = card.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      const rx = ((y / rect.height) - 0.5) * -3;
+      const ry = ((x / rect.width) - 0.5) * 3;
 
-    card.style.transform = `perspective(1200px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(8px) scale(1.01)`;
+      card.style.transform = `perspective(1200px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(8px) scale(1.01)`;
+    });
+
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = 'perspective(1200px) rotateX(0) rotateY(0) translateZ(0) scale(1)';
+    });
   });
 
-  card.addEventListener('mouseleave', () => {
-    card.style.transform = 'perspective(1200px) rotateX(0) rotateY(0) translateZ(0) scale(1)';
-  });
-});
-
-for (let i = 0; i < 12; i += 1) {
-  const dot = document.createElement('span');
-  dot.className = 'float-dot';
-  dot.style.left = `${Math.random() * 100}%`;
-  dot.style.top = `${Math.random() * 100}%`;
-  dot.style.setProperty('--dur', `${4 + Math.random() * 7}s`);
-  document.body.appendChild(dot);
+  const dotCount = window.innerWidth < 720 ? 6 : 12;
+  for (let i = 0; i < dotCount; i += 1) {
+    const dot = document.createElement('span');
+    dot.className = 'float-dot';
+    dot.style.left = `${Math.random() * 100}%`;
+    dot.style.top = `${Math.random() * 100}%`;
+    dot.style.setProperty('--dur', `${4 + Math.random() * 7}s`);
+    document.body.appendChild(dot);
+  }
 }
 
 const openingStage = document.querySelector('#opening-stage');
 const openingOrbs = Array.from(document.querySelectorAll('.opening-orb'));
 
-if (openingStage) {
+if (openingStage && !prefersReducedMotion) {
   const openingHeight = openingStage.offsetHeight || 1;
 
   function updateOpeningState() {
